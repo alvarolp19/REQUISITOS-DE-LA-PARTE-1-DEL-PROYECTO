@@ -1,0 +1,49 @@
+Vagrant.configure("2") do |config|
+    # Máquina virtual BBDD
+    config.vm.define "BBDD" do |bbdd|
+        bbdd.vm.box = "ubuntu/trusty64"
+        bbdd.vm.hostname = "servidorBBDD"
+        bbdd.vm.network "private_network", ip: "192.168.56.31"
+        bbdd.vm.network "forwarded_port", guest: 3306, host: 33060
+        bbdd.vm.provider "virtualbox" do |vb|
+            vb.memory = "2048"
+            vb.cpus = 2
+        end
+        bbdd.vm.provision "shell", inline: <<-SHELL
+            apt-get update
+            apt-get install -y python-pip
+        SHELL
+    end
+
+    # Máquina virtual WEB0
+    config.vm.define "WEB0" do |web0|
+        web0.vm.box = "ubuntu/trusty64"
+        web0.vm.hostname = "servidorWeb"
+        web0.vm.network "private_network", ip: "192.168.56.32"
+        web0.vm.network "forwarded_port", guest: 80, host: 8080
+        web0.vm.provider "virtualbox" do |vb|
+            vb.memory = "1024"
+            vb.cpus = 2
+        end
+        web0.vm.provision "shell", inline: <<-SHELL
+            apt-get update
+            apt-get install -y default-jre
+        SHELL
+    end
+
+    # Máquina virtual WEB1
+    config.vm.define "WEB1" do |web1|
+        web1.vm.box = "ubuntu/trusty64"
+        web1.vm.hostname = "servidorWeb2"
+        web1.vm.network "private_network", ip: "192.168.56.33"
+        web1.vm.network "forwarded_port", guest: 80, host: 9090
+        web1.vm.provider "virtualbox" do |vb|
+            vb.memory = "2048"
+            vb.cpus = 2
+        end
+        web1.vm.provision "shell", inline: <<-SHELL
+            apt-get update
+            apt-get upgrade -y
+        SHELL
+    end
+end
