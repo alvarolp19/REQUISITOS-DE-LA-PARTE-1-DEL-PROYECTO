@@ -1,5 +1,5 @@
-Proyecto de Virtualización y Contenedores
-1. Vagrant: Creación de 3 Máquinas Virtuales Ubuntu/Trusty64 (1.5 pts)
+<h1>Proyecto de Virtualización y Contenedores </h1>
+<h2>1. Vagrant: Creación de 3 Máquinas Virtuales Ubuntu/Trusty64 </h2>
 Este proyecto configura tres máquinas virtuales utilizando Vagrant con Ubuntu Trusty64 y las siguientes especificaciones:
 
 Máquina 1: BBDD
@@ -29,7 +29,7 @@ Acciones: Actualización de todos los paquetes
 Pantallazos:
 Muestra los pantallazos donde se vean las 3 máquinas creadas y configuradas correctamente.
 
-2. Terraform: Creación de Máquinas Virtuales en AWS/Proxmox (1 pt)
+<h2>2. Terraform: Creación de Máquinas Virtuales en AWS/Proxmox </h2>
 Usando Terraform, crea tres máquinas virtuales Linux con las siguientes características:
 
 Máquina 1: BBDD
@@ -53,7 +53,7 @@ Acciones: Actualización de paquetes e instalación de apache2
 Pantallazos:
 Muestra los pantallazos donde se vean las 3 máquinas creadas.
 
-3. Ansible Playbook: Configuración de WEB2 y WEB3 (1.5 pts)
+<h2>3. Ansible Playbook: Configuración de WEB2 y WEB3</h2>
 Crea un playbook que realice las siguientes tareas en las máquinas WEB2 y WEB3:
 
 Crear el usuario XXXXX (donde XXXXX es tu nombre).
@@ -66,7 +66,7 @@ http://localhost:9090/app/ejemplo.html
 Pantallazos:
 Muestra pantallazos de la ejecución de las tareas y los accesos web.
 
-4. Docker-Compose: Balanceador y Servidores Web (1.5 pts)
+<h2>4. Docker-Compose: Balanceador y Servidores Web </h2>
 Configura un archivo docker-compose y los Dockerfile necesarios para arrancar tres contenedores:
 
 Contenedor 1: Balanceador de Carga
@@ -83,7 +83,7 @@ Página: Una index.html con tu nombre.
 Pantallazos:
 Captura pantallas del balanceador de carga mostrando los accesos a los servidores web.
 
-5. Docker-Compose: Aplicación con Postgresql, Adminer, y Fluentd (2.5 pts)
+<h2>5. Docker-Compose: Aplicación con Postgresql, Adminer, y Fluentd </h2>
 Configura un archivo docker-compose y los Dockerfile necesarios para arrancar siete contenedores:
 
 Contenedor 1: PostgreSQL
