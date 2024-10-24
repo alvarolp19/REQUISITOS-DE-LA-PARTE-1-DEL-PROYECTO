@@ -110,6 +110,7 @@ Puerto: 5601
 Conexión: ElasticSearch.
 Pantallazos:
 
-<h2>6. Crea un archivo Kubernetes para arrancar los 7 contenedores anteriores (ten en cuenta que deberás generar previamente las imágenes del servidor PHP y el servidor web), utilizando volúmenes persistentes y secretos para los datos sensibles :</h2>
+<h2>6. Crea un archivo Kubernetes para arrancar los 7 contenedores anteriores</h2>
+(ten en cuenta que deberás generar previamente las imágenes del servidor PHP y el servidor web), utilizando volúmenes persistentes y secretos para los datos sensibles :
 Además debes:
 Abrir un navegador y capturar pantallas de la app de php
