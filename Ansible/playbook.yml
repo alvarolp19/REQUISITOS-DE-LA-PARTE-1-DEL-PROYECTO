@@ -1,0 +1,34 @@
+- name: Servidores Web
+  hosts: webservers
+  become: true
+  tasks:
+    - name: alvaro
+      user:
+        name: "alvaro"
+        state: present
+        shell: /bin/bash
+
+    - name: Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Comprobaciones
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Directorios
+      file:
+        path: /usr/share/nginx/html/app
+        state: directory
+        mode: '0755'
+
+    - name: Copiar archivo HTML
+      copy:
+        src: alvaro.html 
+        dest: /usr/share/nginx/html/app/alvaro.html 
+        mode: '0644'
