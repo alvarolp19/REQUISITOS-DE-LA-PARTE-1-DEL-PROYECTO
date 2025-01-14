@@ -1,0 +1,295 @@
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /mnt/data/postgres
+  persistentVolumeReclaimPolicy: Retain
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:9-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "hugo"
+        - name: POSTGRES_USER
+          value: "root"
+        - name: POSTGRES_PASSWORD
+          value: "clave1"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-sql
+          mountPath: /docker-entrypoint-initdb.d/
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+      - name: init-sql
+        configMap:
+          name: productos-sql-config
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: productos-sql-config
+data:
+  script-inicial.sql: |
+    CREATE DATABASE IF NOT EXISTS ejemplo;
+    USE ejemplo;
+    CREATE TABLE IF NOT EXISTS productos (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100),
+        precio DECIMAL(10, 2)
+    );
+
+    INSERT INTO productos (nombre, precio) VALUES
+    ('Producto1', 10.99),
+    ('Producto2', 20.49),
+    ('Producto3', 5.99)
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: None 
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adminer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adminer
+  template:
+    metadata:
+      labels:
+        app: adminer
+    spec:
+      containers:
+      - name: adminer
+        image: adminer:latest
+        ports:
+        - containerPort: 8080
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: adminer
+spec:
+  selector:
+    app: adminer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30001 
+  type: NodePort  
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apache
+  template:
+    metadata:
+      labels:
+        app: apache
+    spec:
+      containers:
+      - name: apache
+        image: php:8.1-apache  
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: apache-volume
+          mountPath: /var/www/html 
+        env:
+        - name: BBDD_CADENA_CONEXION
+          value: "pgsql:host=postgres;port=5432;dbname=ejemplo"
+        - name: BBDD_USUARIO
+          value: "root"
+        - name: BBDD_CLAVE
+          value: "clave1"
+        command:
+          - /bin/bash
+          - -c
+          - |
+            apt-get update && apt-get install -y libpq-dev && docker-php-ext-install pdo pdo_pgsql pgsql
+            apache2-foreground
+      volumes:
+      - name: apache-volume
+        configMap:
+          name: php-config  
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache
+spec:
+  selector:
+    app: apache
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30002 
+  type: NodePort  
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: php
+spec:
+  selector:
+    app: php
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9000
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apache-config
+data:
+  httpd.conf: |
+    ServerName localhost
+
+    LoadModule php_module modules/libphp.so
+
+    AddHandler php-script .html .php
+
+    <VirtualHost *:80>
+        ProxyPassMatch ^/(.*\.php(/.*)?)$ fcgi://php:9000/var/www/html/$1
+        DocumentRoot /var/www/html/
+        <Directory /var/www/html/>
+            DirectoryIndex index.php index.html
+            Options Indexes FollowSymLinks
+            AllowOverride All
+            Require all granted
+        </Directory>
+
+        CustomLog /proc/self/fd/1 common
+        ErrorLog /proc/self/fd/2
+    </VirtualHost>
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: php-config
+data:
+  index.php: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Document</title>
+        <style>
+            table, tr, td, th {
+                border: 1px solid black;
+            }
+            img {
+                width: 80px;
+                height: 80px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>PRODUCTOS DISPONIBLES</h1>
+    <?php
+        $bd_usuario = $_ENV["BBDD_USUARIO"];
+        $bd_password = $_ENV["BBDD_CLAVE"];
+        try {
+            $dsn = $_ENV["BBDD_CADENA_CONEXION"];
+            $dbh = new PDO($dsn, $bd_usuario, $bd_password);
+            $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch(PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+        echo "<table>";
+        echo "<tr><th>NOMBRE PRODUCTO</th><th>PRECIO</th></tr>";
+        try {
+            $consulta = "SELECT * FROM Productos";
+            $query = $dbh->prepare($consulta);
+            $query->execute();
+            $results = $query->fetchAll(PDO::FETCH_OBJ);
+            foreach($results as $result) {
+                echo "<tr><td>" . $result->nombre . "</td><td>" . $result->precio . "</td></tr>";
+            }
+        } catch(PDOException $e) {
+            echo "Error en la consulta: " . $e->getMessage();
+        }
+        echo "</table>";
+    ?>
+    </body>
+    </html>
